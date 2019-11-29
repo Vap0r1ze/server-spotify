@@ -39,6 +39,11 @@ export default {
 @import './assets/fonts.scss';
 @import url('https://fonts.googleapis.com/css?family=Open+Sans:400,600&display=swap');
 
+html, body {
+  padding: 0;
+  margin: 0;
+}
+
 #app {
   height: 100vh;
   overflow: hidden;
