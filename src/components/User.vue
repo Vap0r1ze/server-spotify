@@ -24,7 +24,12 @@
     >{{ showHistory ? 'Hide' : 'Show' }} History</div>
     <div class="history scroller" v-if="isUser && showHistory && history.length">
       <div v-for="(item, i) in history" :key="i" class="history-item">
-        <Track v-if="item.type === 'track'" :trackId="item.id" :hideCover="true"/>
+        <Track
+          v-if="item.type === 'track'"
+          :trackId="item.id"
+          :hideCover="true"
+          :note="formatTimeDiff(nowDate - item.s - item.t)"
+        />
         <div
           v-if="item.type === 'skipped'"
           class="skipped-container"

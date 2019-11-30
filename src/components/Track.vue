@@ -18,6 +18,8 @@
           :href="`https://open.spotify.com/track/${trackId}`"
           target="_blank"
         >{{ tracks[trackId].name }}</a>
+        <div class="spacer"></div>
+        <span class="note" v-if="note">{{ note }}</span>
       </div>
       <div class="artists">
         <span v-for="(artistId, i) in tracks[trackId].artists" :key="artistId">
@@ -55,22 +57,8 @@ export default {
     large: Boolean,
     autoPalette: Boolean,
     hideCover: Boolean,
-    showPalette: Boolean
-  },
-  computed: {
-    ...mapState(['tracks', 'albums', 'artists']),
-    coverImage() {
-      const { trackId, tracks, albums } = this
-      if (!tracks[trackId]) {
-        console.log('Track %s not saved, from user %s', trackId, this.$parent.userId)
-        return null
-      }
-      return albums[tracks[trackId].album].images[0].url
-    },
-    albumName() {
-      const { trackId, tracks, albums } = this
-      return albums[tracks[trackId].album].name
-    }
+    showPalette: Boolean,
+    note: String
   },
   data() {
     return {
@@ -82,6 +70,25 @@ export default {
   watch: {
     trackId() {
       if (this.autoPalette) this.updatePalette()
+    }
+  },
+  computed: {
+    ...mapState(['tracks', 'albums', 'artists']),
+    coverImage() {
+      const { trackId, tracks, albums } = this
+      if (!tracks[trackId]) {
+        console.log(
+          'Track %s not saved, from user %s',
+          trackId,
+          this.$parent.userId
+        )
+        return null
+      }
+      return albums[tracks[trackId].album].images[0].url
+    },
+    albumName() {
+      const { trackId, tracks, albums } = this
+      return albums[tracks[trackId].album].name
     }
   },
   methods: {
@@ -202,13 +209,27 @@ export default {
     }
   }
   .title {
+    display: flex;
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 2px;
+    a {
+      overflow: hidden;
+      padding-right: 48px;
+      text-overflow: ellipsis;
+    }
+  }
+  .spacer {
+    flex: 1;
   }
   .artists {
     font-size: 12px;
     opacity: 0.5;
+  }
+  .note {
+    color: rgba(#FFF, 0.25);
+    float: right;
+    font-weight: 400;
   }
   .title,
   .artists {
