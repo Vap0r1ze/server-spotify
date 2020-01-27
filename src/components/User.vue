@@ -1,7 +1,7 @@
 <template>
   <div class="user">
     <div class="header" v-if="user">
-      <img class="avatar" :src="avatarUrl">
+      <img class="avatar" :src="avatarUrl" @error="onAvatarError">
       <div class="tag">
         <div class="username">{{ user.username }}</div>
         <div class="discrim">#{{ user.discriminator }}</div>
@@ -79,7 +79,8 @@ export default {
   data() {
     return {
       showHistory: false,
-      openSkips: {}
+      openSkips: {},
+      avatarError: false
     }
   },
   computed: {
@@ -106,8 +107,9 @@ export default {
     },
     avatarUrl() {
       if (!this.user) return defaultAvatars[0]
+      const { avatarError } = this
       const { avatar } = this.user
-      if (avatar) {
+      if (avatar && !avatarError) {
         const ext = avatar.startsWith('a_') ? 'gif' : 'png'
         return `https://cdn.discordapp.com/avatars/${
           this.userId
@@ -130,7 +132,7 @@ export default {
       for (let i = this.activity.length - (this.now ? 2 : 1); i >= 0; i--) {
         let lastEntry = history[history.length - 1]
         const activity = this.activity[i]
-        if (activity.t > 5000) {
+        if (activity.t > 20000) {
           history.push({
             type: 'track',
             id: activity.id,
@@ -182,6 +184,10 @@ export default {
     toggleSkip(i) {
       // Do nothing until performance can be improved
       // this.openSkips[i] = !this.openSkips[i]
+    },
+    
+    onAvatarError() {
+      this.avatarError = true
     }
   }
 }
@@ -253,7 +259,7 @@ export default {
   .history {
     max-height: 300px;
     border: 6px solid #404040;
-    border-radius: 2px;
+    border-radius: 0 2px;
     border-top: none;
     border-right: none;
     overflow-x: hidden;
@@ -266,7 +272,7 @@ export default {
     align-items: center;
     background: #121212;
     color: rgba(255, 255, 255, 0.5);
-    cursor: pointer;
+    /* cursor: pointer; */
     display: flex;
     flex-direction: column;
     font-size: 10px;
