@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import localforage from 'localforage'
 
 Vue.use(Vuex)
 
@@ -35,9 +36,22 @@ export default new Vuex.Store({
     updateNow({ commit }) {
       commit('setNowDate', Date.now())
     },
-    saveTracks({ commit, state }, tracks) {
+    async loadIndexedDB({ commit }) {
+      const tracks = JSON.parse(await localforage.getItem('tracks'))
+      const artists = JSON.parse(await localforage.getItem('artists'))
+      const albums = JSON.parse(await localforage.getItem('albums'))
+      for (const [id, track] of Object.entries(tracks))
+        commit('saveTrack', { id, track })
+      for (const [id, artist] of Object.entries(artists))
+        commit('saveArtist', { id, artist })
+      for (const [id, album] of Object.entries(albums))
+        commit('saveAlbum', { id, album })
+    },
+    async saveTracks({ commit, state }, tracks) {
+      let changes = 0
       for (const track of tracks) {
         if (track.id in state.tracks) continue
+        changes++
         commit('saveTrack', {
           id: track.id,
           track: {
@@ -58,7 +72,7 @@ export default new Vuex.Store({
             }
           })
         }
-        if (!(track.album.id in state.albums))
+        if (!(track.album.id in state.albums)) {
           commit('saveAlbum', {
             id: track.album.id,
             album: {
@@ -67,6 +81,12 @@ export default new Vuex.Store({
               images: track.album.images
             }
           })
+        }
+      }
+      if (changes > 0) {
+        await localforage.setItem('tracks', JSON.stringify(state.tracks))
+        await localforage.setItem('artists', JSON.stringify(state.artists))
+        await localforage.setItem('albums', JSON.stringify(state.albums))
       }
     },
     updateUser({ commit }, { userId, data }) {

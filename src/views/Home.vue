@@ -1,17 +1,9 @@
 <template>
   <div class="home">
     <div class="feed" v-if="ready">
-      <DynamicScroller
-        :items="userIds"
-        :min-item-size="36"
-        class="scroller"
-      >
+      <DynamicScroller :items="userIds" :min-item-size="36" class="scroller">
         <template v-slot="{ item, index, active }">
-          <DynamicScrollerItem
-            :item="item"
-            :active="active"
-            :data-index="index"
-          >
+          <DynamicScrollerItem :item="item" :active="active" :data-index="index">
             <User :userId="item"/>
           </DynamicScrollerItem>
         </template>
@@ -34,6 +26,7 @@
 <script>
 import { queue } from 'async'
 import { mapState } from 'vuex'
+import localforage from 'localforage'
 import { spotify, vapi } from '../api.js'
 import User from '@/components/User.vue'
 
@@ -69,7 +62,7 @@ export default {
       }
       let userIds
       return vapi
-        .getMultiData('/dspotify', [ '*' ])
+        .getMultiData('/dspotify', ['*'])
         .then(users => {
           userIds = Object.keys(users)
           const trackIds = []
@@ -88,17 +81,10 @@ export default {
             }
             for (const track of users[userId].activity) {
               if (/^[a-z0-9]{22}$/i.test(track.id)) {
-                if (
-                  !trackIds.includes(track.id) &&
-                  !(track.id in this.tracks)
-                )
+                if (!trackIds.includes(track.id) && !(track.id in this.tracks))
                   trackIds.push(track.id)
               } else {
-                console.log(
-                  'Invalid ID "%s" from user %s',
-                  track.id,
-                  userId
-                )
+                console.log('Invalid ID "%s" from user %s', track.id, userId)
                 console.log(track)
               }
             }
@@ -174,18 +160,21 @@ export default {
           callback()
         })
         .catch(error => {
-          if (error.response && error.status === 429) {
+          if (error.status === 429) {
             const retryTimeout = parseInt(
               error.response.headers['retry-after'],
               10
             )
-            console.log(
-              'Bucket ratelimited, retrying in %ss',
-              retryTimeout
-            )
+            console.log('Bucket ratelimited, retrying in %ss', retryTimeout)
             setTimeout(() => {
               this.tracksHandler(trackIds, callback)
             }, retryTimeout * 1000 + 500)
+          } else if (error.status === 401) {
+            console.log('Spotify access token expired, obtaining a fresh one')
+            vapi.getSpotifyToken().then(({ token, tokenType }) => {
+              spotify.setToken(token, tokenType)
+              this.tracksHandler(trackIds, callback)
+            })
           } else {
             console.error(error)
           }
@@ -229,10 +218,12 @@ export default {
     }
   },
   created() {
-    this.refreshData().then(() => {
-      this.ready = true
-      this.dataInterval()
-    })
+    this.$store.dispatch('loadIndexedDB').then(() => {
+      return this.refreshData()
+    }).then(() => {
+        this.ready = true
+        this.dataInterval()
+      })
     this.$store.subscribe((mutation, payload) => {
       if (mutation.type === 'reinitUsers') this.sortUsers()
     })
