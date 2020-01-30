@@ -37,7 +37,9 @@ export default new Vuex.Store({
       commit('setNowDate', Date.now())
     },
     async loadIndexedDB({ commit }) {
-      const tracks = JSON.parse(await localforage.getItem('tracks'))
+      const tracksStr = await localforage.getItem('tracks')
+      if (!tracksStr) return
+      const tracks = JSON.parse(tracksStr)
       const artists = JSON.parse(await localforage.getItem('artists'))
       const albums = JSON.parse(await localforage.getItem('albums'))
       for (const [id, track] of Object.entries(tracks))
