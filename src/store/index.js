@@ -10,7 +10,8 @@ export default new Vuex.Store({
     tracks: {},
     albums: {},
     artists: {},
-    users: {}
+    users: {},
+    localforageEnabled: true
   },
   mutations: {
     saveTrack(state, { id, track }) {
@@ -30,6 +31,9 @@ export default new Vuex.Store({
     },
     reinitUsers(state) {
       state.users = { ...state.users }
+    },
+    disableLocalforage(state) {
+      state.localforageEnabled = false
     }
   },
   actions: {
@@ -37,17 +41,21 @@ export default new Vuex.Store({
       commit('setNowDate', Date.now())
     },
     async loadIndexedDB({ commit }) {
-      const tracksStr = await localforage.getItem('tracks')
-      if (!tracksStr) return
-      const tracks = JSON.parse(tracksStr)
-      const artists = JSON.parse(await localforage.getItem('artists'))
-      const albums = JSON.parse(await localforage.getItem('albums'))
-      for (const [id, track] of Object.entries(tracks))
-        commit('saveTrack', { id, track })
-      for (const [id, artist] of Object.entries(artists))
-        commit('saveArtist', { id, artist })
-      for (const [id, album] of Object.entries(albums))
-        commit('saveAlbum', { id, album })
+      // try {
+      //   const tracksStr = await localforage.getItem('tracks')
+      //   if (!tracksStr) return
+      //   const tracks = JSON.parse(tracksStr)
+      //   const artists = JSON.parse(await localforage.getItem('artists'))
+      //   const albums = JSON.parse(await localforage.getItem('albums'))
+      //   for (const [id, track] of Object.entries(tracks))
+      //     commit('saveTrack', { id, track })
+      //   for (const [id, artist] of Object.entries(artists))
+      //     commit('saveArtist', { id, artist })
+      //   for (const [id, album] of Object.entries(albums))
+      //     commit('saveAlbum', { id, album })
+      // } catch (error) {
+      //   commit('disableLocalforage')
+      // }
     },
     async saveTracks({ commit, state }, tracks) {
       let changes = 0
@@ -85,7 +93,7 @@ export default new Vuex.Store({
           })
         }
       }
-      if (changes > 0) {
+      if (changes > 0 && state.localforageEnabled) {
         await localforage.setItem('tracks', JSON.stringify(state.tracks))
         await localforage.setItem('artists', JSON.stringify(state.artists))
         await localforage.setItem('albums', JSON.stringify(state.albums))
