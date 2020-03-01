@@ -16,7 +16,7 @@
         background: statusColor
       }"></div>
     </div>
-    <Track v-if="isUser && now" :trackId="now" :autoPalette="true"/>
+    <Track v-if="isUser && now" :trackId="now" :autoPalette="true" :showPalette="showPalette"/>
     <div
       class="history-btn"
       v-if="isUser && history.length"
@@ -55,8 +55,12 @@
 <script>
 import { formatDistanceStrict } from 'date-fns'
 import { mapState } from 'vuex'
+import qs from 'qs'
 import { spotify, vapi } from '../api.js'
 import Track from '@/components/Track.vue'
+
+const q = qs.parse(window.location.search.slice(1))
+const showPalette = q.showpalette != null
 
 const defaultAvatars = [
   'https://canary.discordapp.com/assets/6debd47ed13483642cf09e832ed0bc1b.png'
@@ -80,7 +84,8 @@ export default {
     return {
       showHistory: false,
       openSkips: {},
-      avatarError: false
+      avatarError: false,
+      showPalette
     }
   },
   computed: {

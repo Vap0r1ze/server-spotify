@@ -27,8 +27,13 @@
 import { queue } from 'async'
 import { mapState } from 'vuex'
 import localforage from 'localforage'
+import qs from 'qs'
 import { spotify, vapi } from '../api.js'
 import User from '@/components/User.vue'
+
+const q = qs.parse(window.location.search.slice(1))
+const searchForUsers = q.users ? q.users.split(',') : ['*']
+const hideHistory = Boolean(q.hidehistory != null)
 
 let cachedTracks = []
 let cachedUsers = {}
@@ -62,13 +67,16 @@ export default {
       }
       let userIds
       return vapi
-        .getMultiData('/dspotify', ['*'])
+        .getMultiData('/dspotify', searchForUsers)
         .then(users => {
           userIds = Object.keys(users)
           const trackIds = []
           const trackIdBuckets = []
           for (const userId of userIds) {
             if (!(userId in users)) continue
+            if (hideHistory) {
+              users[userId].activity = users[userId].activity.slice(-1)
+            }
             const lastActivity =
               users[userId].activity[users[userId].activity.length - 1]
             const lastListen =
@@ -218,9 +226,12 @@ export default {
     }
   },
   created() {
-    this.$store.dispatch('loadIndexedDB').then(() => {
-      return this.refreshData()
-    }).then(() => {
+    this.$store
+      .dispatch('loadIndexedDB')
+      .then(() => {
+        return this.refreshData()
+      })
+      .then(() => {
         this.ready = true
         this.dataInterval()
       })
